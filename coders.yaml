@@ -1,0 +1,33 @@
+# coders.kr multi-service deploy manifest.
+#
+# This template uses `mode: native` — the platform gate validates the
+# visitor's session and stamps the identity as `X-Coders-User` on the
+# way in. The app trusts that header (see backend/app/core/identity.py
+# and frontend/lib/identity.ts) and does NOT implement OAuth itself.
+#
+# Existing apps that already have their own login can deploy with
+# `mode: standalone` instead — see PLATFORM.md in the coders-platform repo.
+
+version: "1"
+mode: native
+
+services:
+  web:
+    dockerfile: frontend/Dockerfile
+    context: frontend
+    port: 3000
+    expose: public
+    env:
+      BACKEND_URL: ${api.internal_url}
+      NODE_ENV: production
+
+  api:
+    dockerfile: backend/Dockerfile
+    context: backend
+    port: 8000
+    env:
+      DATABASE_URL: postgresql+asyncpg://${db.user}:${db.password}@${db.host}:${db.port}/${db.name}
+
+  db:
+    type: postgres
+    size: 1Gi
