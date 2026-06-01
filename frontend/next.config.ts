@@ -2,17 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Proxy /api/* to the backend service. The platform delivers BACKEND_URL
-  // at pod-start time; we fall back to a syntactically-valid placeholder
-  // so `next build` doesn't blow up during the build step.
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${process.env.BACKEND_URL ?? "http://localhost:8000"}/api/:path*`,
-      },
-    ];
-  },
+  // /api/* is proxied to the backend via middleware.ts (request-time),
+  // not via `rewrites()` (build-time, BACKEND_URL isn't known then).
 };
 
 export default nextConfig;
