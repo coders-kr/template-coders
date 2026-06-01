@@ -36,9 +36,20 @@ server {
     set $backend "${BACKEND_URL}";
     proxy_pass        $backend;
     proxy_http_version 1.1;
-    proxy_set_header   Host $host;
+    # CRITICAL: send the upstream's own hostname as Host, not the
+    # public name. The K8s Service Knative auto-creates for each KSvc
+    # is an ExternalName pointing at kourier-internal, which routes by
+    # Host header — preserving "tcs.coders.kr" sends the request back
+    # through the public DomainMapping into gate and loops indefinitely
+    # (the gate had to do the same fix in Go). $proxy_host is nginx's
+    # internal name for "the host portion of proxy_pass," which here
+    # resolves to api.proj-<tenant>.svc.cluster.local.
+    proxy_set_header   Host $proxy_host;
     proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header   X-Forwarded-Proto $scheme;
+    # tcs.coders.kr is the visible host the upstream might want for
+    # building absolute URLs; pass it explicitly under a different name.
+    proxy_set_header   X-Forwarded-Host $host;
     # Forward the platform gate's identity header straight through.
     proxy_pass_request_headers on;
     proxy_read_timeout 30s;
