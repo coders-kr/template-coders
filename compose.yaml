@@ -1,0 +1,70 @@
+# Local dev for template-coders.
+#
+#   docker compose up
+#
+# Brings up:
+#   db        — Postgres 16 on :5432
+#   backend   — FastAPI on :8000, alembic upgrade + reload
+#   frontend  — Next.js dev on :3000 (proxies /api/* to backend)
+#
+# Identity in dev: this template trusts X-Coders-User on every request.
+# There's no platform gate in front of you locally, so set DEV_FAKE_USER
+# in backend/.env to a fixed UUID and identity.py will treat anonymous
+# requests as that user. See app/core/identity.py.
+#
+# No redis / no arq — this template has no background jobs. If you add
+# them, mirror template-full's compose for the redis service.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    working_dir: /app
+    command: sh -c "uv sync --frozen && uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:app@db:5432/app
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && pnpm install && pnpm dev"
+    ports:
+      - "3000:3000"
+    environment:
+      # Next.js rewrites this in next.config.ts at request time so it
+      # picks up the in-compose hostname.
+      BACKEND_URL: http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

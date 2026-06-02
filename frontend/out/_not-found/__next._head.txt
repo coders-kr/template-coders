@@ -1,5 +1,0 @@
-1:"$Sreact.fragment"
-2:I[7966,["/_next/static/chunks/0z47x~5b1crfp.js","/_next/static/chunks/0~5sc4aqvhew4.js"],"ViewportBoundary"]
-3:I[7966,["/_next/static/chunks/0z47x~5b1crfp.js","/_next/static/chunks/0~5sc4aqvhew4.js"],"MetadataBoundary"]
-4:"$Sreact.suspense"
-0:{"rsc":["$","$1","h",{"children":[["$","meta",null,{"name":"robots","content":"noindex"}],["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"template-coders"}],["$","meta","1",{"name":"description","content":"A coders.kr-aware SPA starter."}]]}]}]}],null]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"P0qQCl2LJds5BPtqf3gaJ"}

@@ -9,41 +9,29 @@ export function Header() {
   const me = useMe();
 
   return (
-    <header
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "1.25rem 0",
-        borderBottom: "1px solid #e5e7eb",
-        marginBottom: "1.5rem",
-      }}
-    >
+    <header className="flex items-center justify-between border-b py-4 mb-6">
       <Link
         href="/"
-        style={{
-          fontSize: "1.15rem",
-          fontWeight: 600,
-          color: "inherit",
-          textDecoration: "none",
-        }}
+        className="text-base font-semibold tracking-tight hover:text-muted-foreground"
       >
         template-coders
       </Link>
-      <nav style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+      <nav className="flex items-center gap-4">
         {me === undefined ? (
-          // Loading: render nothing so the page doesn't flash a sign-in
-          // button at people who turn out to be signed in already.
-          <span style={{ opacity: 0 }}>·</span>
+          // Reserve a slot so the page doesn't reflow when identity resolves.
+          <span aria-hidden className="opacity-0">·</span>
         ) : me ? (
           <>
-            <Link href="/profile" style={{ color: "inherit" }}>
+            <Link
+              href="/profile"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               {me.display_name}
             </Link>
             <SignOutLink />
           </>
         ) : (
-          <SignInLink />
+          <SignInLink size="sm" />
         )}
       </nav>
     </header>
