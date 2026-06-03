@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchUserPosts, type Post } from "@/lib/api";
 import { useMe } from "@/lib/identity";
@@ -19,14 +18,21 @@ export function Profile() {
   }, [me]);
 
   if (me === undefined) {
-    return <Skeleton className="h-32 w-full" />;
+    return (
+      <div className="space-y-3 pt-4">
+        <Skeleton className="h-9 w-44" />
+        <Skeleton className="h-24 w-full" />
+      </div>
+    );
   }
 
   if (me === null) {
     return (
-      <div className="space-y-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="space-y-4 pt-4">
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+          Profile
+        </h1>
+        <p className="text-[15px] text-muted-foreground">
           You need to sign in to see this page.
         </p>
         <SignInLink returnTo="/profile" />
@@ -35,24 +41,32 @@ export function Profile() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+    <div className="space-y-12">
+      <header className="pt-4">
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+          {me.display_name}
+        </h1>
+        <p className="mt-2 text-[15px] text-muted-foreground">
+          Your app-local profile, mirrored from the coders.kr platform
+          identity on first sight.
+        </p>
+      </header>
 
-      <Card>
-        <CardContent>
-          <dl className="grid grid-cols-[8rem_1fr] gap-y-3 text-sm">
-            <dt className="text-muted-foreground">display name</dt>
-            <dd>{me.display_name}</dd>
-            <dt className="text-muted-foreground">coders.kr id</dt>
-            <dd className="font-mono text-xs">{me.coders_id}</dd>
-            <dt className="text-muted-foreground">first seen</dt>
-            <dd>{new Date(me.first_seen_at).toLocaleString()}</dd>
-          </dl>
-        </CardContent>
-      </Card>
+      <section className="space-y-4">
+        <h2 className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          Identity
+        </h2>
+        <dl className="divide-y rounded-md border text-[14px]">
+          <Row label="display name">{me.display_name}</Row>
+          <Row label="coders.kr id" mono>{me.coders_id}</Row>
+          <Row label="first seen">
+            {new Date(me.first_seen_at).toLocaleString()}
+          </Row>
+        </dl>
+      </section>
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+      <section className="space-y-4">
+        <h2 className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
           Your posts
         </h2>
         <ul className="space-y-1">
@@ -62,9 +76,12 @@ export function Profile() {
             </li>
           )}
           {posts && posts.length === 0 && (
-            <li className="text-sm text-muted-foreground">
+            <li className="rounded-md border border-dashed bg-muted/40 px-5 py-6 text-center text-[13px] text-muted-foreground">
               None yet — head to{" "}
-              <Link href="/" className="underline-offset-4 hover:underline">
+              <Link
+                href="/"
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+              >
                 the feed
               </Link>{" "}
               and write one.
@@ -73,16 +90,37 @@ export function Profile() {
           {posts?.map((p) => (
             <li
               key={p.id}
-              className="border-b py-4 last:border-b-0"
+              className="-mx-3 rounded-md px-3 py-3 transition-colors hover:bg-muted/50"
             >
-              <div className="text-xs text-muted-foreground">
+              <time className="text-[12px] text-muted-foreground" dateTime={p.created_at}>
                 {new Date(p.created_at).toLocaleString()}
+              </time>
+              <div className="mt-1.5 text-[15px] leading-relaxed whitespace-pre-wrap">
+                {p.body}
               </div>
-              <div className="mt-1 text-sm">{p.body}</div>
             </li>
           ))}
         </ul>
       </section>
+    </div>
+  );
+}
+
+function Row({
+  label,
+  children,
+  mono = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[7.5rem_1fr] gap-4 px-4 py-3">
+      <dt className="text-[12px] uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </dt>
+      <dd className={mono ? "font-mono text-[12px]" : ""}>{children}</dd>
     </div>
   );
 }

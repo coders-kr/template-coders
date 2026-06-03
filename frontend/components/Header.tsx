@@ -9,22 +9,21 @@ export function Header() {
   const me = useMe();
 
   return (
-    <header className="flex items-center justify-between border-b py-4 mb-6">
+    <header className="flex items-center justify-between py-5">
       <Link
         href="/"
-        className="text-base font-semibold tracking-tight hover:text-muted-foreground"
+        className="text-[15px] font-semibold tracking-tight transition-colors hover:text-muted-foreground"
       >
         template-coders
       </Link>
       <nav className="flex items-center gap-4">
         {me === undefined ? (
-          // Reserve a slot so the page doesn't reflow when identity resolves.
           <span aria-hidden className="opacity-0">·</span>
         ) : me ? (
           <>
             <Link
               href="/profile"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
             >
               {me.display_name}
             </Link>

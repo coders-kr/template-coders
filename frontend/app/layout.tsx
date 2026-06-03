@@ -33,22 +33,21 @@ export default function RootLayout({
         <div className="mx-auto max-w-3xl px-6 sm:px-8 pb-16">
           <Header />
           <main>{children}</main>
-          <footer className="mt-16 border-t pt-5 text-sm text-muted-foreground">
+          <footer className="mt-20 border-t pt-6 text-[12px] text-muted-foreground leading-relaxed">
             Hosted on{" "}
             <a
               href="https://coders.kr"
-              className="underline-offset-4 hover:underline"
+              className="font-medium text-foreground/80 underline-offset-4 hover:underline"
             >
               coders.kr
             </a>{" "}
-            — identity and metering handled by the platform; this app
-            reads{" "}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+            · identity + metering by the platform · the app reads{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-foreground">
               X-Coders-User
             </code>{" "}
             on the backend and learns who you are on the frontend by
             fetching{" "}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-foreground">
               /api/me
             </code>
             .
