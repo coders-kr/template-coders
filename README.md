@@ -82,6 +82,15 @@ images, brings up Postgres in your tenant namespace, wires
 `${db.url}` into the backend's env, fronts the whole thing with a
 gate at `<name>.coders.kr`, and returns the URL.
 
+## Platform policies (read before you ship)
+
+[**PLATFORM.md**](./PLATFORM.md) documents how the platform treats your app
+at runtime — identity, the cost model, quota pools, cold start, and the
+WebSocket/long-connection rules. **If your app streams or holds connections
+open, read §5 first:** a single open *anonymous* WebSocket drains your
+site's anonymous pool in under an hour, after which all anonymous traffic is
+redirected to sign-in.
+
 ## Going further
 
 - Add a `redis` component to `coders.yaml` if you want background jobs.
