@@ -213,6 +213,66 @@ exactly the cost in §5. Pick deliberately.)
 
 ---
 
+## 8. Managed LLM (Claude) — no API key of your own
+
+Declare a `type: llm` component and the platform gives you a working Claude
+endpoint with **no Anthropic key of your own**. The platform injects its key,
+and **bills each call's exact tokens to the visitor's pool** — same per-visitor
+economics as everything else.
+
+```yaml
+# coders.yaml
+services:
+  api:
+    dockerfile: backend/Dockerfile
+    env:
+      ANTHROPIC_BASE_URL: ${ai.url}     # the platform LLM proxy
+      ANTHROPIC_API_KEY:  ${ai.token}   # per-tenant token — NOT a real key
+
+  ai:
+    type: llm
+    # Allow-list. Default is the cheaper tier; list Opus to opt in.
+    models: [claude-sonnet-4-6, claude-haiku-4-5]
+    default_model: claude-sonnet-4-6
+```
+
+Use the **stock Anthropic SDK** unchanged — only `base_url`/`api_key` come from
+env. Streaming, tools, thinking, and prompt caching all pass through.
+
+### You MUST forward `X-Coders-User` on each call
+
+The proxy bills the **visitor**, but your server-side LLM call doesn't carry the
+visitor's identity unless you pass it. Forward the `X-Coders-User` header you
+received on the incoming request as `x-coders-user` on the Anthropic call.
+**If you don't, the call is billed to the project's anonymous pool** (and one
+chat can drain it — see below).
+
+```python
+# backend: forward the caller's identity so cost lands on THEIR pool
+from anthropic import AsyncAnthropic
+client = AsyncAnthropic()  # base_url + api_key from env
+
+async def reply(prompt: str, coders_user):           # coders_user from identity dep
+    msg = await client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+        extra_headers={"x-coders-user": str(coders_user)} if coders_user else {},
+    )
+    return msg.content[0].text
+```
+
+### Cost reality
+
+LLM tokens are **far** more expensive than page compute. One Sonnet turn
+(~1K in + 1K out) ≈ 21,600 micros — so the $3 anonymous pool buys only ~140
+turns, the $0.30 per-user-per-site pool ~6. This is by design: the per-visitor
+pool is what bounds spend. Plan for it — gate expensive generation behind
+sign-in, keep prompts/outputs tight, and lean on prompt caching (cache-reads
+are billed at 1/10th). The proxy clamps `max_tokens` to 16,000 per request.
+
+---
+
 ## TL;DR
 
 - Trust `X-Coders-User`; never build login; link to `mcp.coders.kr/sso/*`.
@@ -224,4 +284,11 @@ exactly the cost in §5. Pick deliberately.)
 - **WebSockets bill ~60k micros/min.** One open *anonymous* socket kills your
   anonymous pool in ~50 min. Authenticate before opening long sockets, set
   `timeout`, and reconnect on drop.
+- **Managed LLM** (`type: llm`): no key of your own; forward `X-Coders-User` on
+  every Claude call or it bills the anonymous pool. Tokens are the priciest
+  axis — a $3 pool ≈ 140 Sonnet turns.
 - Build at image time so cold starts stay fast.
+- **Hit friction deploying? Call the `report_issue` MCP tool** — any error you
+  worked around, confusing message, or doc that didn't match reality. Report it
+  whether it's your mistake, the platform's, or this template's; the maintainers
+  triage. Don't self-censor.
