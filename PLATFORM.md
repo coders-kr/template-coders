@@ -79,8 +79,9 @@ Rules of thumb:
 
 - A snappy JSON `GET` (~50 ms, a few KB) ≈ **~200 micros**.
 - A 1-second request ≈ **~1,100 micros**.
-- **A connection held open for 60 seconds ≈ ~60,000 micros** (see §5 — this
-  is why WebSockets need care).
+- **A held *HTTP* request (long-poll/SSE) open for 60 seconds ≈ ~60,000
+  micros** (see §5b — this is why long-poll/SSE need care; a WebSocket is
+  billed by egress, not open-time, so an idle one is ~free).
 
 Static assets (JS/CSS/images) served with cache headers are fronted by
 Cloudflare and **don't hit your pod**, so they cost nothing. Lean on the CDN.
@@ -145,35 +146,37 @@ on reconnect — treat a dropped socket as normal, not exceptional. (App-level
 WebSocket ping/pong passes through the gate transparently and helps keep
 intermediaries from closing an otherwise-quiet connection.)
 
-### 5b. A long connection bills continuously — and can wall off your site
+### 5b. How long-lived connections are billed — WebSocket vs long-poll/SSE
 
-Because cost is **~1 micro per millisecond open**, an open connection bills
-about **60,000 micros per minute** (÷ concurrency). Compare that to the
-pools in §4:
+Two **different** cost models, and the gap is large:
 
-| Pool | Size | ≈ minutes of one open socket |
-|---|---|---|
-| Anonymous (whole site) | 3,000,000 | **~50 min** |
-| Signed-in per-site | 300,000 | **~5 min** |
+- **WebSocket (an upgraded connection): billed by egress bytes only — NOT by
+  how long it stays open.** An *idle* socket costs ≈ **nothing**; an active
+  stream costs roughly its bytes out. So holding a WebSocket open is cheap.
+  (Open-*time* billing was removed after it drained sites' pools.)
+- **long-poll / SSE (a held *HTTP* request, no upgrade): billed by open
+  time**, ~**1 micro/ms ≈ 60,000 micros/min** (÷ concurrency), booked when
+  the request closes. Against the §4 pools:
 
-So **one anonymous WebSocket left open drains your entire site's anonymous
-pool in under an hour** — after which *every* anonymous request 302s to
-sign-in (§4). This is the single most common way to take a site down by
-accident.
+  | Pool | Size | ≈ minutes of one held long-poll/SSE request |
+  |---|---|---|
+  | Anonymous (whole site) | 3,000,000 | ~50 min |
+  | Signed-in per-site | 300,000 | ~5 min |
+
+  A held HTTP stream is the expensive one — and Cloudflare also severs it at
+  ~50s regardless of `timeout` (§5d).
 
 Design around it:
 
-- **Don't hold anonymous sockets open.** Require sign-in *before* opening a
-  long-lived connection (open the socket only after you have an
-  `X-Coders-User`), so its cost lands on that user's pool, not the shared
-  anonymous one.
-- Even signed-in, the per-site pool is ~5 socket-minutes — heavy realtime
-  use needs the user to have a paid balance, or it'll gate. Budget for it.
-- Keep sockets idle-cheap but short; reconnect on demand rather than holding
-  a channel open for hours.
-- A background **daemon/agent that holds a socket open continuously must be
-  authenticated** (send the `coders_session` cookie), or it will silently
-  drain the anonymous pool.
+- **Prefer a WebSocket** for any persistent channel — it's idle-cheap and
+  isn't subject to the ~50s Cloudflare cut.
+- **Keep long-poll/SSE short** — return within ~50s and have the client
+  re-poll (both because of the time billing and the CF limit).
+- A background **daemon/agent** holding a connection open should still
+  authenticate so its traffic is attributed to a real identity — send the
+  `coders_session` cookie, or use a **runner token** (`Authorization: Bearer`)
+  that resolves to you (the owner). An *anonymous* held long-poll/SSE keeps
+  draining the shared anonymous pool.
 
 ### 5c. The gate can't see inside a socket — authorize messages yourself
 
@@ -197,8 +200,9 @@ quiet period pays a cold start. Keep it short:
   multi-second stall (and can trip readiness).
 - Run DB migrations as a one-shot step, not on every boot.
 
-(An open WebSocket keeps the pod warm — which is good for latency but is
-exactly the cost in §5. Pick deliberately.)
+(An open WebSocket keeps the pod warm — good for latency, and since
+WebSockets are billed by egress not open-time (§5b), an idle one is cheap
+to hold. A held long-poll/SSE request is the costly kind — see §5b.)
 
 ---
 
@@ -350,9 +354,10 @@ the thing to check.
   part divided by concurrency; static assets are free via the CDN.
 - Anonymous pool empty → **all anonymous traffic 302s to sign-in** for the
   month. Per-user-per-site pool is small (300k).
-- **WebSockets bill ~60k micros/min.** One open *anonymous* socket kills your
-  anonymous pool in ~50 min. Authenticate before opening long sockets, set
-  `timeout`, and reconnect on drop.
+- **A WebSocket is billed by egress bytes (idle ≈ free); a held long-poll/SSE
+  request is billed by time (~60k micros/min) AND cut by Cloudflare at ~50s.**
+  Prefer WebSockets for persistent channels; keep long-poll/SSE short. Set
+  `timeout` and reconnect on drop (§5).
 - **Managed LLM** (`type: llm`): no key of your own; forward `X-Coders-User` on
   every Claude call or it bills the anonymous pool. Tokens are the priciest
   axis — a $3 pool ≈ 140 Sonnet turns.
