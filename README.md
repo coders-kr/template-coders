@@ -58,18 +58,31 @@ coders.yaml             web + api + postgres; `mode: native`
 
 ## Local development
 
-You don't need the platform running to develop locally. Set
-`DEV_FAKE_USER` to a UUID on the backend and the identity dependencies
-will treat unauthenticated requests as coming from that UUID:
+**One command, full hot reload — no platform, no setup:**
+
+```bash
+docker compose up
+```
+
+Brings up Postgres + the FastAPI backend (`uvicorn --reload`) + the Next.js
+frontend (`next dev`) at **http://localhost:3000**. Edit any file and it's live
+instantly — no rebuild, no deploy. Iterate here; deploy only when you're ready
+to ship. (`/api/*` is proxied to the backend, and Postgres migrations run on
+start.)
+
+There's no platform gate locally, so every request is treated as a fixed
+signed-in dev user (`DEV_FAKE_USER`, defaulted in `compose.yaml`). To test as a
+different user — or the anonymous path — set `DEV_FAKE_USER` in `backend/.env`
+(copy `backend/.env.example`), or unset it.
+
+Prefer running the services yourself (no Docker)? Point the backend at a local
+Postgres and set the same vars in `backend/.env`:
 
 ```bash
 # backend/.env
 DATABASE_URL=postgresql+asyncpg://app:app@localhost:5432/app
 DEV_FAKE_USER=00000000-0000-0000-0000-000000000001
 ```
-
-For the frontend, hardcode an `X-Coders-User` header in your dev
-proxy if you need to exercise the signed-in path.
 
 ## Deploying
 
