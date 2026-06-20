@@ -204,6 +204,11 @@ quiet period pays a cold start. Keep it short:
 WebSockets are billed by egress not open-time (§5b), an idle one is cheap
 to hold. A held long-poll/SSE request is the costly kind — see §5b.)
 
+While iterating you can skip both builds and cold starts: `dev_up <name>`
+opens a tunnel so `https://<name>-dev.coders.kr` serves your local,
+hot-reloading code through the real gate (owner-only). See the README's
+"Preview your local app at a real `coders.kr` URL".
+
 ---
 
 ## 7. Modes

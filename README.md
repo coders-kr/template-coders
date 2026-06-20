@@ -84,6 +84,37 @@ DATABASE_URL=postgresql+asyncpg://app:app@localhost:5432/app
 DEV_FAKE_USER=00000000-0000-0000-0000-000000000001
 ```
 
+## Preview your local app at a real `coders.kr` URL — `dev_up`
+
+`docker compose up` is fast but local-only: a fake user, no real platform gate,
+and a URL only you can open. When you want to see your *local, hot-reloading*
+code at a real `https://<name>-dev.coders.kr` — **with no build and no deploy** —
+open a **dev tunnel**. In Claude Code:
+
+```
+dev_up <name>
+```
+
+It returns an `frpc.toml` and a one-line command. Then, on your machine:
+
+1. Run your app locally on port 3000 (`docker compose up` is fine).
+2. Install [frp](https://github.com/fatedier/frp) (`brew install frpc`) and save
+   the returned config as `frpc.toml`.
+3. `frpc -c frpc.toml`
+4. Open `https://<name>-dev.coders.kr`.
+
+Now every edit on your machine is live at that URL instantly — the bytes are
+served straight from your laptop (HMR/WebSockets included). Unlike pure-local
+dev, requests go through the **real platform gate**: the preview is **private to
+you** (owner-only), the session cookie is stripped, and your real
+`X-Coders-User` is stamped — exactly like production, so you can test identity
+for real. Your live `<name>.coders.kr` site is untouched.
+
+Requires the project to have been `deploy`ed at least once (the tunnel reuses its
+namespace). `dev_down <name>` closes the tunnel (it also auto-closes after a few
+idle hours). Use this for the tight edit→see loop; `deploy` when you're ready to
+ship for real.
+
 ## Deploying
 
 This repo ships a [`.mcp.json`](./.mcp.json) that points Claude Code at the
