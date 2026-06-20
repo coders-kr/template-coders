@@ -36,3 +36,17 @@ async def health() -> JSONResponse:
             status_code=503, content={"status": "error", "detail": "database"}
         )
     return JSONResponse(content={"status": "ok"})
+
+
+@app.get("/api/health/live")
+async def liveness() -> JSONResponse:
+    """Liveness probe — answers the instant this process can serve a request,
+    touching NOTHING (no DB, no I/O). The frontend's warming banner
+    (frontend/lib/warming.ts) hits this to tell a real cold start apart from a
+    merely slow request: when the api KSvc is scaled to zero, Knative's
+    activator buffers this until a pod is up, so the probe is slow ⇔ the server
+    is genuinely waking. When warm it returns in ~1ms even while a heavy
+    endpoint is still in flight — so the banner stays off for ordinary slowness.
+    Keep it dependency-free; adding a DB hit here would reintroduce false
+    'warming' whenever the DB (not the pod) is the slow part."""
+    return JSONResponse(content={"status": "ok"})
