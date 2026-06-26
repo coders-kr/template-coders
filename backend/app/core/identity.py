@@ -21,6 +21,7 @@ defense-in-depth for self-hosted local dev and a clearer contract.
 
 from __future__ import annotations
 
+import urllib.parse
 from uuid import UUID
 
 from fastapi import Header, HTTPException
@@ -46,6 +47,19 @@ async def optional_identity(
         return parsed
     # Local-dev fallback so curl works without the platform gate.
     return _parse_uuid(settings.dev_fake_user)
+
+
+async def optional_display_name(
+    x_coders_user_name: str | None = Header(default=None),
+) -> str | None:
+    """The visitor's opt-in display name, if they set one on coders.kr. The gate
+    forwards it URL-encoded as `X-Coders-User-Name` (headers are ASCII; names may
+    be Unicode), so we percent-decode it. None when they haven't chosen a name —
+    fall back to a generated handle then."""
+    if not x_coders_user_name:
+        return None
+    name = urllib.parse.unquote(x_coders_user_name).strip()
+    return name or None
 
 
 async def require_identity(
