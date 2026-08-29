@@ -103,6 +103,40 @@ Backend tests (needs a Postgres; compose's works):
 cd backend && uv run pytest
 ```
 
+### Agent toolbar in local development
+
+Development builds show a small coders.kr toolbar in the lower-left corner.
+Before an agent is connected, only the **/c** mark is visible. Click it, choose
+Codex, Claude Code, Antigravity, or another AI, then copy **Paste to your AI**
+into that agent. The copied prompt uses the format recommended for that agent
+while every provider uses the same one-time pairing protocol underneath.
+
+The agent opens the five-minute, single-use manifest and runs the bridge command
+inside it:
+
+```bash
+node scripts/coders-agent-bridge.mjs --pair http://localhost:8000/api/dev/pair/<code>
+```
+
+The bridge must run on the host, not inside Docker. The Codex adapter forwards
+events with the local `codex queue` command; other providers currently expose
+events in the running bridge until their native session adapters are added.
+After a bridge connects, **Deploy** and **Pick** appear and the /c
+panel shows all live agents. A button first shows a spinner, then a check when
+the bridge receives and acknowledges the event. Pick also sends the selected
+element's URL, CSS selector, and visible text. Use `--dry-run` to test the UI
+and acknowledgements without sending anything to a task.
+
+The previous direct Codex command remains available as a fallback:
+
+```bash
+node scripts/coders-agent-bridge.mjs --thread <task-id-or-exact-name>
+```
+
+The event hub is enabled by `DEV_AGENT_BRIDGE=true` in `compose.yaml`. It is
+absent from `coders.yaml`, so deployed apps reject these development WebSocket
+connections and production builds render no toolbar.
+
 ## Deploying
 
 This repo ships a [`.mcp.json`](./.mcp.json) that points Claude Code at
