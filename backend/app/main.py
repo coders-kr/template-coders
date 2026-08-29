@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.core.database import AsyncSessionLocal
+from app.dev_agent_hub import router as dev_agent_router
 from app.routes.posts import router as posts_router
 from app.routes.users import router as users_router
 
@@ -24,6 +25,7 @@ app = FastAPI(
 
 app.include_router(users_router)
 app.include_router(posts_router)
+app.include_router(dev_agent_router)
 
 
 @app.get("/api/health")

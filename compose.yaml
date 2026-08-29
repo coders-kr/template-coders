@@ -51,6 +51,10 @@ services:
       # user (see app/core/identity.py). Override in backend/.env if you want
       # to test as a different user, or unset to exercise the anonymous path.
       DEV_FAKE_USER: ${DEV_FAKE_USER:-00000000-0000-0000-0000-000000000001}
+      # Local-only WebSocket hub for the coders.kr development toolbar.
+      # coders.yaml never sets this, so deployed apps keep it disabled.
+      DEV_AGENT_BRIDGE: "true"
+      DEV_AGENT_PUBLIC_URL: http://localhost:8000
     volumes:
       - ./backend:/app
       - /app/.venv
