@@ -50,11 +50,11 @@ type ActionState = {
   detail?: string;
 };
 
-const providers: Array<{ id: Provider; name: string; hint: string }> = [
-  { id: "codex", name: "Codex", hint: "Concise Markdown" },
-  { id: "claude", name: "Claude Code", hint: "Structured XML" },
-  { id: "antigravity", name: "Antigravity", hint: "Task Markdown" },
-  { id: "generic", name: "Other AI", hint: "Plain text" },
+const providers: Array<{ id: Provider; name: string }> = [
+  { id: "codex", name: "Codex" },
+  { id: "claude", name: "Claude Code" },
+  { id: "antigravity", name: "Antigravity" },
+  { id: "generic", name: "Other AI" },
 ];
 
 const initialActions: Record<ActionName, ActionState> = {
@@ -154,7 +154,7 @@ export function DevDeployBadge() {
   const [hubOnline, setHubOnline] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>();
-  const [provider, setProvider] = useState<Provider>("codex");
+  const [provider, setProvider] = useState<Provider>("generic");
   const [pairing, setPairing] = useState<Pairing | null>(null);
   const [creating, setCreating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -370,25 +370,21 @@ export function DevDeployBadge() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4">
+          <div className="flex items-center gap-2 p-3">
             {providers.map((item) => (
               <button
                 type="button"
                 key={item.id}
                 onClick={() => chooseProvider(item.id)}
-                className={`flex min-h-16 flex-col items-start justify-between rounded-xl border p-2.5 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60 ${
-                  provider === item.id && pairing
+                className={`grid size-10 place-items-center rounded-xl border transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/60 ${
+                  provider === item.id
                     ? "border-zinc-900 bg-zinc-50 dark:border-white dark:bg-zinc-800"
                     : "border-black/10 dark:border-white/10"
                 }`}
+                aria-label={item.name}
+                title={item.name}
               >
                 <ProviderIcon provider={item.id} />
-                <span>
-                  <span className="block text-[11px] font-medium">{item.name}</span>
-                  <span className="block text-[9.5px] text-zinc-500">
-                    {item.hint}
-                  </span>
-                </span>
               </button>
             ))}
           </div>
@@ -462,7 +458,14 @@ export function DevDeployBadge() {
       <div className="flex h-10 items-center gap-1 rounded-xl border border-black/10 bg-white/95 p-1 shadow-lg shadow-black/10 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900/95">
         <button
           type="button"
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => {
+            if (open) {
+              setOpen(false);
+              return;
+            }
+            setOpen(true);
+            if (!pairing) void chooseProvider("generic");
+          }}
           className="grid size-8 place-items-center rounded-lg transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
           aria-label="Connect an AI agent"
           aria-expanded={open}
